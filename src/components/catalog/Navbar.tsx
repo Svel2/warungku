@@ -13,7 +13,13 @@ export default function Navbar() {
     const [isAdmin, setIsAdmin] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isHydrated, setIsHydrated] = useState(false);
     const totalItems = useCartStore((state) => state.getTotalItems());
+
+    // Fix hydration mismatch - only show cart count after client hydration
+    useEffect(() => {
+        setIsHydrated(true);
+    }, []);
 
     useEffect(() => {
         const checkUserRole = async () => {
@@ -131,7 +137,7 @@ export default function Navbar() {
                                 className="relative p-2 text-[var(--color-charcoal)] hover:text-[var(--color-forest)] transition-colors touch-manipulation"
                             >
                                 <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
-                                {totalItems > 0 && (
+                                {isHydrated && totalItems > 0 && (
                                     <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 rounded-full bg-[var(--color-forest)] text-white text-xs font-medium flex items-center justify-center px-1.5">
                                         {totalItems}
                                     </span>
