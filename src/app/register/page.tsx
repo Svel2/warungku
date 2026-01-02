@@ -5,16 +5,47 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Check, X } from "lucide-react";
+
+// Password validation helper
+function validatePassword(password: string) {
+    const requirements = {
+        minLength: password.length >= 8,
+        hasUppercase: /[A-Z]/.test(password),
+        hasLowercase: /[a-z]/.test(password),
+        hasNumber: /[0-9]/.test(password),
+    };
+
+    const isValid = Object.values(requirements).every(Boolean);
+
+    return { requirements, isValid };
+}
 
 export default function RegisterPage() {
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [showPasswordRequirements, setShowPasswordRequirements] = useState(false);
+
+    const passwordValidation = validatePassword(password);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validasi password di client
+        if (!passwordValidation.isValid) {
+            toast.error("Password tidak memenuhi persyaratan keamanan");
+            return;
+        }
+
+        // Validasi email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            toast.error("Format email tidak valid");
+            return;
+        }
+
         setIsLoading(true);
 
         const supabase = createClient();
@@ -69,11 +100,35 @@ export default function RegisterPage() {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            onFocus={() => setShowPasswordRequirements(true)}
+                            onBlur={() => setShowPasswordRequirements(false)}
                             className="w-full px-4 py-2 border border-zinc-300 rounded-sm focus:ring-[var(--color-forest)] focus:border-[var(--color-forest)] outline-none transition-all"
-                            placeholder="Minimal 6 karakter"
-                            minLength={6}
+                            placeholder="Minimal 8 karakter"
+                            minLength={8}
                             required
                         />
+                        {/* Password Requirements Indicator */}
+                        {(showPasswordRequirements || password.length > 0) && (
+                            <div className="mt-2 p-3 bg-zinc-50 rounded-sm text-xs space-y-1">
+                                <p className="font-medium text-[var(--color-charcoal)] mb-2">Password harus memiliki:</p>
+                                <div className={`flex items-center gap-2 ${passwordValidation.requirements.minLength ? 'text-green-600' : 'text-zinc-400'}`}>
+                                    {passwordValidation.requirements.minLength ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                                    <span>Minimal 8 karakter</span>
+                                </div>
+                                <div className={`flex items-center gap-2 ${passwordValidation.requirements.hasUppercase ? 'text-green-600' : 'text-zinc-400'}`}>
+                                    {passwordValidation.requirements.hasUppercase ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                                    <span>Huruf besar (A-Z)</span>
+                                </div>
+                                <div className={`flex items-center gap-2 ${passwordValidation.requirements.hasLowercase ? 'text-green-600' : 'text-zinc-400'}`}>
+                                    {passwordValidation.requirements.hasLowercase ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                                    <span>Huruf kecil (a-z)</span>
+                                </div>
+                                <div className={`flex items-center gap-2 ${passwordValidation.requirements.hasNumber ? 'text-green-600' : 'text-zinc-400'}`}>
+                                    {passwordValidation.requirements.hasNumber ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                                    <span>Angka (0-9)</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <button

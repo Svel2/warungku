@@ -10,26 +10,96 @@ interface CreateOrderParams {
     items: {
         product_id: string;
         quantity: number;
-        price: number;
+        price: number; // Ini akan diverifikasi dari server
     }[];
-    total_amount: number;
+    total_amount: number; // Ini akan dihitung ulang dari server
+}
+
+interface ProductWithStock {
+    id: string;
+    name: string;
+    price: number;
+    stock: number;
+    is_active: boolean;
 }
 
 export async function createOrder(params: CreateOrderParams) {
     const supabase = await createClient();
 
-    // 1. Get current user if logged in
+    // 1. Validasi input dasar
+    if (!params.customer_name?.trim()) {
+        return { error: "Nama pelanggan wajib diisi" };
+    }
+    if (!params.customer_phone?.trim()) {
+        return { error: "Nomor telepon wajib diisi" };
+    }
+    if (!params.items || params.items.length === 0) {
+        return { error: "Keranjang belanja kosong" };
+    }
+
+    // 2. Get current user if logged in
     const { data: { user } } = await supabase.auth.getUser();
 
-    // 2. Create Order
+    // 3. VALIDASI HARGA DAN STOK DARI SERVER (CRITICAL FIX)
+    const productIds = params.items.map(item => item.product_id);
+    const { data: products, error: productsError } = await supabase
+        .from("products")
+        .select("id, name, price, stock, is_active")
+        .in("id", productIds);
+
+    if (productsError || !products) {
+        return { error: "Gagal memvalidasi produk" };
+    }
+
+    // Buat map untuk akses cepat
+    const productMap = new Map<string, ProductWithStock>();
+    products.forEach(p => productMap.set(p.id, p));
+
+    // Validasi setiap item
+    const validatedItems: { product_id: string; quantity: number; server_price: number; name: string }[] = [];
+    let calculatedTotal = 0;
+
+    for (const item of params.items) {
+        const product = productMap.get(item.product_id);
+
+        if (!product) {
+            return { error: `Produk tidak ditemukan` };
+        }
+
+        if (!product.is_active) {
+            return { error: `Produk "${product.name}" sudah tidak tersedia` };
+        }
+
+        if (item.quantity <= 0) {
+            return { error: `Jumlah tidak valid untuk "${product.name}"` };
+        }
+
+        if (item.quantity > product.stock) {
+            return {
+                error: `Stok "${product.name}" tidak cukup. Tersedia: ${product.stock}, Diminta: ${item.quantity}`
+            };
+        }
+
+        // Gunakan harga dari SERVER, bukan dari client
+        validatedItems.push({
+            product_id: product.id,
+            quantity: item.quantity,
+            server_price: product.price,
+            name: product.name
+        });
+
+        calculatedTotal += product.price * item.quantity;
+    }
+
+    // 4. Create Order dengan total yang dihitung server
     const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
-            user_id: user?.id,
-            customer_name: params.customer_name,
-            customer_phone: params.customer_phone,
-            customer_address: params.customer_address,
-            total_amount: params.total_amount,
+            user_id: user?.id || null,
+            customer_name: params.customer_name.trim(),
+            customer_phone: params.customer_phone.trim(),
+            customer_address: params.customer_address?.trim() || null,
+            total_amount: calculatedTotal, // Gunakan harga dari server!
             status: 'pending'
         })
         .select()
@@ -39,12 +109,12 @@ export async function createOrder(params: CreateOrderParams) {
         return { error: orderError.message };
     }
 
-    // 3. Create Order Items
-    const orderItems = params.items.map(item => ({
+    // 5. Create Order Items dengan harga dari server
+    const orderItems = validatedItems.map(item => ({
         order_id: order.id,
         product_id: item.product_id,
         quantity: item.quantity,
-        price_at_time: item.price
+        price_at_time: item.server_price // Harga dari server!
     }));
 
     const { error: itemsError } = await supabase
@@ -52,27 +122,65 @@ export async function createOrder(params: CreateOrderParams) {
         .insert(orderItems);
 
     if (itemsError) {
-        // Should probably delete the order here aka rollback
+        // Rollback: hapus order
         await supabase.from("orders").delete().eq("id", order.id);
-        return { error: itemsError.message };
+        return { error: "Gagal menyimpan item pesanan" };
     }
 
-    // 4. Update Stock
-    for (const item of params.items) {
-        await supabase.rpc('decrement_stock', {
+    // 6. Update Stock dengan pengecekan ulang (prevent race condition)
+    const stockUpdateErrors: string[] = [];
+
+    for (const item of validatedItems) {
+        // Gunakan RPC untuk atomic update, dengan fallback manual
+        const { error: rpcError } = await supabase.rpc('decrement_stock', {
             product_id: item.product_id,
             qty: item.quantity
         });
-        // Fallback if RPC doesn't exist yet: update manually (not atomic but OK for MVP)
-        // Ideally we assume RPC exists or create it. Let's rely on manual update for now if RPC fails or just do manual update.
-        const { data: product } = await supabase.from("products").select("stock").eq("id", item.product_id).single();
-        if (product) {
-            await supabase.from("products").update({ stock: Math.max(0, product.stock - item.quantity) }).eq("id", item.product_id);
+
+        // Jika RPC tidak ada atau gagal, gunakan manual update dengan pengecekan
+        if (rpcError) {
+            // Ambil stok terkini
+            const { data: currentProduct, error: fetchError } = await supabase
+                .from("products")
+                .select("stock")
+                .eq("id", item.product_id)
+                .single();
+
+            if (fetchError || !currentProduct) {
+                stockUpdateErrors.push(`Gagal update stok: ${item.name}`);
+                continue;
+            }
+
+            const newStock = currentProduct.stock - item.quantity;
+
+            // Update dengan kondisi untuk mencegah race condition
+            const { error: updateError } = await supabase
+                .from("products")
+                .update({
+                    stock: Math.max(0, newStock),
+                    updated_at: new Date().toISOString()
+                })
+                .eq("id", item.product_id)
+                .gte("stock", item.quantity); // Hanya update jika stok masih cukup
+
+            if (updateError) {
+                stockUpdateErrors.push(`Gagal update stok: ${item.name}`);
+            }
         }
     }
 
-    revalidatePath("/");
-    revalidatePath("/admin/products"); // Update stock in admin
+    // Log jika ada error stok (tapi order tetap sukses)
+    if (stockUpdateErrors.length > 0) {
+        console.error("Stock update errors:", stockUpdateErrors);
+    }
 
-    return { success: true, orderId: order.id };
+    revalidatePath("/");
+    revalidatePath("/admin/products");
+    revalidatePath("/profile");
+
+    return {
+        success: true,
+        orderId: order.id,
+        totalAmount: calculatedTotal
+    };
 }

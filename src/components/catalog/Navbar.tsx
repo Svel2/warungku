@@ -17,25 +17,45 @@ export default function Navbar() {
 
     useEffect(() => {
         const checkUserRole = async () => {
-            const { createClient } = await import("@/lib/supabase/client");
-            const supabase = createClient();
+            try {
+                const { createClient } = await import("@/lib/supabase/client");
+                const supabase = createClient();
 
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                setIsLoggedIn(true);
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', user.id)
-                    .single();
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-                if (profile?.role === 'admin') {
-                    setIsAdmin(true);
+                if (authError) {
+                    console.error("Auth error in Navbar:", authError.message);
+                    setIsLoggedIn(false);
+                    setIsLoading(false);
+                    return;
                 }
-            } else {
+
+                if (user) {
+                    setIsLoggedIn(true);
+
+                    // Gunakan maybeSingle() untuk menghindari error jika profile belum ada
+                    const { data: profile, error: profileError } = await supabase
+                        .from('profiles')
+                        .select('role')
+                        .eq('id', user.id)
+                        .maybeSingle();
+
+                    if (profileError) {
+                        console.error("Profile fetch error:", profileError.message);
+                    }
+
+                    if (profile?.role === 'admin') {
+                        setIsAdmin(true);
+                    }
+                } else {
+                    setIsLoggedIn(false);
+                }
+            } catch (error) {
+                console.error("Unexpected error in Navbar:", error);
                 setIsLoggedIn(false);
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         };
 
         checkUserRole();

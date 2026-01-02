@@ -1,6 +1,27 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Helper function untuk mendapatkan role user dengan error handling
+async function getUserRole(supabase: ReturnType<typeof createServerClient>, userId: string): Promise<string | null> {
+    try {
+        const { data: profile, error } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", userId)
+            .maybeSingle(); // Gunakan maybeSingle() bukan single() untuk menghindari error jika tidak ada
+
+        if (error) {
+            console.error("Error fetching profile:", error.message);
+            return null;
+        }
+
+        return profile?.role || null;
+    } catch (err) {
+        console.error("Unexpected error fetching profile:", err);
+        return null;
+    }
+}
+
 export async function middleware(request: NextRequest) {
     let supabaseResponse = NextResponse.next({
         request,
@@ -15,15 +36,21 @@ export async function middleware(request: NextRequest) {
                     return request.cookies.getAll();
                 },
                 setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value }) =>
-                        request.cookies.set(name, value)
-                    );
-                    supabaseResponse = NextResponse.next({
-                        request,
-                    });
-                    cookiesToSet.forEach(({ name, value, options }) =>
-                        supabaseResponse.cookies.set(name, value, options)
-                    );
+                    try {
+                        cookiesToSet.forEach(({ name, value }) =>
+                            request.cookies.set(name, value)
+                        );
+                        supabaseResponse = NextResponse.next({
+                            request,
+                        });
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            supabaseResponse.cookies.set(name, value, options)
+                        );
+                    } catch (error) {
+                        // Cookie setting bisa gagal di Server Components
+                        // Ini aman diabaikan karena middleware akan refresh session
+                        console.warn("Cookie set warning:", error);
+                    }
                 },
             },
         }
@@ -32,7 +59,13 @@ export async function middleware(request: NextRequest) {
     // Refresh session if exists
     const {
         data: { user },
+        error: authError
     } = await supabase.auth.getUser();
+
+    // Handle auth error gracefully
+    if (authError) {
+        console.error("Auth error in middleware:", authError.message);
+    }
 
     const pathname = request.nextUrl.pathname;
 
@@ -41,25 +74,20 @@ export async function middleware(request: NextRequest) {
         if (!user) {
             const url = request.nextUrl.clone();
             url.pathname = "/login";
+            url.searchParams.set("next", pathname);
             return NextResponse.redirect(url);
         }
 
-        // Check role
-        const { data: profile } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", user.id)
-            .single();
+        // Check role dengan error handling
+        const role = await getUserRole(supabase, user.id);
 
-        if (profile?.role !== "admin") {
-            // Redirect non-admin to home
+        if (role !== "admin") {
+            // Redirect non-admin atau user tanpa profile ke home
             const url = request.nextUrl.clone();
             url.pathname = "/";
             return NextResponse.redirect(url);
         }
     }
-
-
 
     // Protect Customer Routes (Profile & Checkout)
     const protectedRoutes = ["/profile", "/checkout"];
@@ -77,14 +105,10 @@ export async function middleware(request: NextRequest) {
         if (user) {
             const url = request.nextUrl.clone();
 
-            // Check role to decide where to go
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("role")
-                .eq("id", user.id)
-                .single();
+            // Check role dengan error handling
+            const role = await getUserRole(supabase, user.id);
 
-            if (profile?.role === "admin") {
+            if (role === "admin") {
                 url.pathname = "/admin";
             } else {
                 url.pathname = "/";
