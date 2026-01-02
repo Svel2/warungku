@@ -23,8 +23,12 @@ export default function Navbar() {
 
                 const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-                if (authError) {
+                // "Auth session missing!" is not an error - it's a normal state when user is not logged in
+                if (authError && authError.message !== "Auth session missing!") {
                     console.error("Auth error in Navbar:", authError.message);
+                }
+
+                if (authError || !user) {
                     setIsLoggedIn(false);
                     setIsLoading(false);
                     return;
