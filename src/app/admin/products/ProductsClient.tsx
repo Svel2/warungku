@@ -65,12 +65,12 @@ export default function ProductsClient({ initialProducts, categories }: Products
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Produk</h1>
-                    <p className="text-zinc-500">Kelola semua produk warung</p>
+                    <h1 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">Produk</h1>
+                    <p className="text-sm text-zinc-500">Kelola semua produk warung</p>
                 </div>
                 <button
                     onClick={() => {
@@ -78,10 +78,10 @@ export default function ProductsClient({ initialProducts, categories }: Products
                         setImageUrl(null);
                         setShowForm(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm sm:text-base"
                 >
                     <Plus className="w-5 h-5" />
-                    Tambah Produk
+                    <span>Tambah Produk</span>
                 </button>
             </div>
 
@@ -93,12 +93,12 @@ export default function ProductsClient({ initialProducts, categories }: Products
                     placeholder="Cari produk..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900"
+                    className="w-full pl-10 pr-4 py-2.5 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-sm"
                 />
             </div>
 
-            {/* Table */}
-            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            {/* Desktop Table */}
+            <div className="hidden lg:block bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
                 <table className="w-full">
                     <thead className="bg-zinc-50 dark:bg-zinc-800">
                         <tr>
@@ -171,11 +171,86 @@ export default function ProductsClient({ initialProducts, categories }: Products
                 </table>
             </div>
 
+            {/* Mobile Cards */}
+            <div className="lg:hidden space-y-3">
+                {filteredProducts.map((product) => (
+                    <div
+                        key={product.id}
+                        className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4"
+                    >
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                                    <Package className="w-6 h-6 text-zinc-400" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                                        {product.name}
+                                    </h3>
+                                    <p className="text-sm text-zinc-500">
+                                        {(product.category as Category | null)?.name || "Tanpa Kategori"}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex gap-1 flex-shrink-0">
+                                <button
+                                    onClick={() => {
+                                        setEditingProduct(product);
+                                        setImageUrl(product.image_url);
+                                        setShowForm(true);
+                                    }}
+                                    className="p-2 text-zinc-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                >
+                                    <Pencil className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(product)}
+                                    className="p-2 text-zinc-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <span className={cn(
+                                    "px-2 py-1 rounded-full text-xs font-bold",
+                                    product.stock < 5
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-green-100 text-green-700"
+                                )}>
+                                    Stok: {product.stock}
+                                </span>
+                                <span className={cn(
+                                    "px-2 py-1 rounded-full text-xs font-medium",
+                                    product.is_active
+                                        ? "bg-green-100 text-green-700"
+                                        : "bg-zinc-100 text-zinc-500"
+                                )}>
+                                    {product.is_active ? "Aktif" : "Nonaktif"}
+                                </span>
+                            </div>
+                            <p className="font-bold text-orange-600">
+                                {formatRupiah(product.price)}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Empty State */}
+            {filteredProducts.length === 0 && (
+                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-12 text-center">
+                    <Package className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
+                    <p className="text-zinc-500">Tidak ada produk ditemukan</p>
+                </div>
+            )}
+
             {/* Form Modal */}
             {showForm && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl max-w-md w-full p-6">
-                        <h2 className="text-xl font-bold mb-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl max-w-md w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+                        <h2 className="text-lg sm:text-xl font-bold mb-4">
                             {editingProduct ? "Edit Produk" : "Tambah Produk"}
                         </h2>
                         <form onSubmit={handleSubmit} className="space-y-4">
@@ -193,10 +268,10 @@ export default function ProductsClient({ initialProducts, categories }: Products
                                     name="name"
                                     defaultValue={editingProduct?.name}
                                     required
-                                    className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800"
+                                    className="w-full px-3 py-2.5 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-sm font-medium mb-1">Harga</label>
                                     <input
@@ -204,7 +279,7 @@ export default function ProductsClient({ initialProducts, categories }: Products
                                         type="number"
                                         defaultValue={editingProduct?.price}
                                         required
-                                        className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800"
+                                        className="w-full px-3 py-2.5 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm"
                                     />
                                 </div>
                                 <div>
@@ -214,7 +289,7 @@ export default function ProductsClient({ initialProducts, categories }: Products
                                         type="number"
                                         defaultValue={editingProduct?.stock}
                                         required
-                                        className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800"
+                                        className="w-full px-3 py-2.5 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm"
                                     />
                                 </div>
                             </div>
@@ -223,7 +298,7 @@ export default function ProductsClient({ initialProducts, categories }: Products
                                 <select
                                     name="category_id"
                                     defaultValue={editingProduct?.category_id || ""}
-                                    className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800"
+                                    className="w-full px-3 py-2.5 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm"
                                 >
                                     <option value="">-- Pilih Kategori --</option>
                                     {categories.map((cat) => (
@@ -237,7 +312,7 @@ export default function ProductsClient({ initialProducts, categories }: Products
                                     name="description"
                                     defaultValue={editingProduct?.description || ""}
                                     rows={2}
-                                    className="w-full px-3 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800"
+                                    className="w-full px-3 py-2.5 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-sm"
                                 />
                             </div>
 
@@ -261,14 +336,14 @@ export default function ProductsClient({ initialProducts, categories }: Products
                                 <button
                                     type="button"
                                     onClick={() => setShowForm(false)}
-                                    className="flex-1 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                    className="flex-1 py-2.5 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm"
                                 >
                                     Batal
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="flex-1 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                                    className="flex-1 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 text-sm"
                                 >
                                     {isSubmitting ? "Menyimpan..." : "Simpan"}
                                 </button>
