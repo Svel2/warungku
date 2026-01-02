@@ -2,9 +2,10 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { formatRupiah, cn } from "@/lib/utils";
-import { Package, User, LogOut, Calendar, ArrowRight } from "lucide-react";
+import { Package, User, Calendar, ArrowRight } from "lucide-react";
 import Navbar from "@/components/catalog/Navbar";
 import Footer from "@/components/layout/Footer";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 export default async function ProfilePage() {
     const supabase = await createClient();
@@ -55,12 +56,7 @@ export default async function ProfilePage() {
                                         <Package className="w-4 h-4" />
                                         <span>Pesanan Saya</span>
                                     </div>
-                                    <form action="/auth/signout" method="post">
-                                        <button className="w-full flex items-center gap-3 text-sm text-red-600 p-2 hover:bg-red-50 rounded-md transition-colors text-left">
-                                            <LogOut className="w-4 h-4" />
-                                            <span>Keluar</span>
-                                        </button>
-                                    </form>
+                                    <LogoutButton />
                                 </div>
                             </div>
                         </div>
