@@ -52,18 +52,18 @@ export default async function Home({ searchParams }: HomeProps) {
       <Hero />
       <CategoryFilter categories={categories || []} />
 
-      <main className="container mx-auto px-6 lg:px-12 py-12">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-12 py-6 sm:py-12">
         {/* Section Header */}
-        <div className="mb-10 flex items-end justify-between">
+        <div className="mb-6 sm:mb-10 flex items-end justify-between">
           <div>
-            <p className="text-[var(--color-forest)] text-xs tracking-[0.2em] uppercase mb-2">
+            <p className="text-[var(--color-forest)] text-[10px] sm:text-xs tracking-[0.15em] sm:tracking-[0.2em] uppercase mb-1 sm:mb-2">
               Koleksi Kami
             </p>
-            <h2 className="font-display text-2xl lg:text-3xl text-[var(--color-charcoal)]">
+            <h2 className="font-display text-xl sm:text-2xl lg:text-3xl text-[var(--color-charcoal)]">
               {categoryFilter || "Semua Produk"}
             </h2>
           </div>
-          <p className="text-[var(--color-muted)] text-sm hidden sm:block">
+          <p className="text-[var(--color-muted)] text-xs sm:text-sm">
             {products?.length || 0} item
           </p>
         </div>

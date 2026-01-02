@@ -63,13 +63,13 @@ export default function Navbar() {
 
     return (
         <>
-            <nav className="fixed top-0 left-0 right-0 z-40 bg-[var(--color-cream)]/90 backdrop-blur-md">
-                <div className="container mx-auto px-6 lg:px-12">
-                    <div className="flex items-center justify-between h-20 gap-4">
+            <nav className="fixed top-0 left-0 right-0 z-40 bg-[var(--color-cream)]/95 backdrop-blur-md safe-area-top">
+                <div className="container mx-auto px-4 sm:px-6 lg:px-12">
+                    <div className="flex items-center justify-between h-16 sm:h-20 gap-2 sm:gap-4">
                         {/* Brand */}
                         <Link
                             href="/"
-                            className="font-display text-2xl tracking-tight text-[var(--color-forest)] hover:text-[var(--color-forest-dark)] transition-colors flex-shrink-0"
+                            className="font-display text-xl sm:text-2xl tracking-tight text-[var(--color-forest)] hover:text-[var(--color-forest-dark)] transition-colors flex-shrink-0"
                         >
                             WarungKu
                         </Link>
@@ -102,12 +102,12 @@ export default function Navbar() {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-4 flex-shrink-0">
+                        <div className="flex items-center gap-1 sm:gap-4 flex-shrink-0">
                             {!isLoading && (
                                 isLoggedIn ? (
                                     <Link
                                         href="/profile"
-                                        className="p-2 text-[var(--color-charcoal)] hover:text-[var(--color-forest)] transition-colors"
+                                        className="p-2 text-[var(--color-charcoal)] hover:text-[var(--color-forest)] transition-colors touch-manipulation"
                                         title="Profil Saya"
                                     >
                                         <User className="w-5 h-5" strokeWidth={1.5} />
@@ -115,7 +115,7 @@ export default function Navbar() {
                                 ) : (
                                     <Link
                                         href="/login"
-                                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[var(--color-forest)] hover:bg-[var(--color-forest-dark)] rounded-lg transition-colors"
+                                        className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[var(--color-forest)] hover:bg-[var(--color-forest-dark)] rounded-lg transition-colors"
                                     >
                                         Masuk
                                     </Link>
@@ -124,7 +124,7 @@ export default function Navbar() {
 
                             <button
                                 onClick={() => setIsCartOpen(true)}
-                                className="relative p-2 text-[var(--color-charcoal)] hover:text-[var(--color-forest)] transition-colors"
+                                className="relative p-2 text-[var(--color-charcoal)] hover:text-[var(--color-forest)] transition-colors touch-manipulation"
                             >
                                 <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
                                 {totalItems > 0 && (
@@ -136,7 +136,7 @@ export default function Navbar() {
 
                             <button
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                                className="md:hidden p-2 text-[var(--color-charcoal)]"
+                                className="md:hidden p-2 text-[var(--color-charcoal)] touch-manipulation"
                             >
                                 {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                             </button>
@@ -144,7 +144,7 @@ export default function Navbar() {
                     </div>
 
                     {/* Mobile Search - Visible only on mobile */}
-                    <div className="md:hidden pb-4">
+                    <div className="md:hidden pb-3">
                         <SearchBar />
                     </div>
 
@@ -154,20 +154,57 @@ export default function Navbar() {
 
                 {/* Mobile Menu */}
                 {isMobileMenuOpen && (
-                    <div className="md:hidden bg-[var(--color-cream)] border-t border-[var(--color-cream-dark)] py-6 px-6">
-                        <div className="flex flex-col gap-4">
-                            <Link href="/" className="text-[var(--color-charcoal)] font-medium">Katalog</Link>
-                            <Link href="#categories" className="text-[var(--color-muted)]">Kategori</Link>
+                    <div className="md:hidden bg-[var(--color-cream)] border-t border-[var(--color-cream-dark)] py-4 px-4 animate-fade-in">
+                        <div className="flex flex-col gap-1">
+                            <Link
+                                href="/"
+                                className="text-[var(--color-charcoal)] font-medium py-3 px-2 rounded-lg hover:bg-[var(--color-cream-dark)] transition-colors"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                Katalog
+                            </Link>
+                            <Link
+                                href="#categories"
+                                className="text-[var(--color-muted)] py-3 px-2 rounded-lg hover:bg-[var(--color-cream-dark)] transition-colors"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                Kategori
+                            </Link>
                             {isAdmin && (
-                                <Link href="/admin" className="text-[var(--color-muted)]">Admin</Link>
+                                <Link
+                                    href="/admin"
+                                    className="text-[var(--color-muted)] py-3 px-2 rounded-lg hover:bg-[var(--color-cream-dark)] transition-colors"
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                >
+                                    Admin Panel
+                                </Link>
                             )}
+                            <div className="h-px bg-[var(--color-cream-dark)] my-2" />
                             {!isLoading && (
                                 isLoggedIn ? (
-                                    <Link href="/profile" className="text-[var(--color-muted)]">Profil Saya</Link>
+                                    <Link
+                                        href="/profile"
+                                        className="text-[var(--color-muted)] py-3 px-2 rounded-lg hover:bg-[var(--color-cream-dark)] transition-colors"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                        Profil Saya
+                                    </Link>
                                 ) : (
                                     <>
-                                        <Link href="/login" className="text-[var(--color-forest)] font-medium">Masuk</Link>
-                                        <Link href="/register" className="text-[var(--color-muted)]">Daftar</Link>
+                                        <Link
+                                            href="/login"
+                                            className="text-white bg-[var(--color-forest)] py-3 px-4 rounded-lg text-center font-medium"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                        >
+                                            Masuk
+                                        </Link>
+                                        <Link
+                                            href="/register"
+                                            className="text-[var(--color-forest)] py-3 px-2 text-center font-medium"
+                                            onClick={() => setIsMobileMenuOpen(false)}
+                                        >
+                                            Daftar Akun Baru
+                                        </Link>
                                     </>
                                 )
                             )}
