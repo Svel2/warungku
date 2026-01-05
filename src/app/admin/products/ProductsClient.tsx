@@ -67,10 +67,10 @@ export default function ProductsClient({ initialProducts, categories }: Products
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Produk</h1>
-                    <p className="text-zinc-500">Kelola semua produk warung</p>
+                    <p className="text-sm text-zinc-500">Kelola semua produk warung</p>
                 </div>
                 <button
                     onClick={() => {
@@ -78,7 +78,7 @@ export default function ProductsClient({ initialProducts, categories }: Products
                         setImageUrl(null);
                         setShowForm(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors w-full sm:w-auto justify-center"
                 >
                     <Plus className="w-5 h-5" />
                     Tambah Produk
@@ -97,8 +97,8 @@ export default function ProductsClient({ initialProducts, categories }: Products
                 />
             </div>
 
-            {/* Table */}
-            <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            {/* Desktop Table View - Hidden on Mobile */}
+            <div className="hidden md:block bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
                 <table className="w-full">
                     <thead className="bg-zinc-50 dark:bg-zinc-800">
                         <tr>
@@ -171,10 +171,85 @@ export default function ProductsClient({ initialProducts, categories }: Products
                 </table>
             </div>
 
+            {/* Mobile Card View - Visible Only on Mobile */}
+            <div className="md:hidden space-y-4">
+                {filteredProducts.map((product) => (
+                    <div
+                        key={product.id}
+                        className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4"
+                    >
+                        {/* Product Header */}
+                        <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3 flex-1">
+                                <div className="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                                    <Package className="w-6 h-6 text-zinc-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                                        {product.name}
+                                    </h3>
+                                    <p className="text-sm text-zinc-500">
+                                        {(product.category as Category | null)?.name || "-"}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                                <button
+                                    onClick={() => {
+                                        setEditingProduct(product);
+                                        setImageUrl(product.image_url);
+                                        setShowForm(true);
+                                    }}
+                                    className="p-2 text-zinc-500 hover:text-orange-600 transition-colors"
+                                >
+                                    <Pencil className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(product)}
+                                    className="p-2 text-zinc-500 hover:text-red-600 transition-colors"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Product Info Grid */}
+                        <div className="grid grid-cols-2 gap-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+                            <div>
+                                <p className="text-xs text-zinc-500 mb-1">Harga</p>
+                                <p className="font-semibold text-orange-600">{formatRupiah(product.price)}</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-zinc-500 mb-1">Stok</p>
+                                <span className={cn(
+                                    "inline-block px-2 py-1 rounded-full text-xs font-bold",
+                                    product.stock < 5
+                                        ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                        : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                )}>
+                                    {product.stock}
+                                </span>
+                            </div>
+                            <div className="col-span-2">
+                                <p className="text-xs text-zinc-500 mb-1">Status</p>
+                                <span className={cn(
+                                    "inline-block px-2 py-1 rounded-full text-xs font-medium",
+                                    product.is_active
+                                        ? "bg-green-100 text-green-700"
+                                        : "bg-zinc-100 text-zinc-500"
+                                )}>
+                                    {product.is_active ? "Aktif" : "Nonaktif"}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
             {/* Form Modal */}
             {showForm && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl max-w-md w-full p-6">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl max-w-md w-full p-4 sm:p-6 my-8">
                         <h2 className="text-xl font-bold mb-4">
                             {editingProduct ? "Edit Produk" : "Tambah Produk"}
                         </h2>
@@ -261,14 +336,14 @@ export default function ProductsClient({ initialProducts, categories }: Products
                                 <button
                                     type="button"
                                     onClick={() => setShowForm(false)}
-                                    className="flex-1 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                    className="flex-1 py-3 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 font-medium"
                                 >
                                     Batal
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="flex-1 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                                    className="flex-1 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 font-medium"
                                 >
                                     {isSubmitting ? "Menyimpan..." : "Simpan"}
                                 </button>

@@ -65,17 +65,17 @@ export default function CategoriesClient({ initialCategories, productCounts }: C
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Kategori</h1>
-                    <p className="text-zinc-500">Kelola kategori produk</p>
+                    <p className="text-sm text-zinc-500">Kelola kategori produk</p>
                 </div>
                 <button
                     onClick={() => {
                         setEditingCategory(null);
                         setShowForm(true);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors w-full sm:w-auto justify-center"
                 >
                     <Plus className="w-5 h-5" />
                     Tambah Kategori
@@ -123,8 +123,8 @@ export default function CategoriesClient({ initialCategories, productCounts }: C
 
             {/* Form Modal */}
             {showForm && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl max-w-md w-full p-6">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl max-w-md w-full p-4 sm:p-6 my-8">
                         <h2 className="text-xl font-bold mb-4">
                             {editingCategory ? "Edit Kategori" : "Tambah Kategori"}
                         </h2>
@@ -160,14 +160,14 @@ export default function CategoriesClient({ initialCategories, productCounts }: C
                                 <button
                                     type="button"
                                     onClick={() => setShowForm(false)}
-                                    className="flex-1 py-2 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                    className="flex-1 py-3 border border-zinc-200 dark:border-zinc-700 rounded-lg hover:bg-zinc-50 dark:hover:bg-zinc-800 font-medium"
                                 >
                                     Batal
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="flex-1 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                                    className="flex-1 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 font-medium"
                                 >
                                     {isSubmitting ? "Menyimpan..." : "Simpan"}
                                 </button>
