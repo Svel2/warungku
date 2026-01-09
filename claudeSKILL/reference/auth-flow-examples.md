@@ -695,4 +695,4 @@ export default function LogoutButton() {
 7. **Disable buttons during loading**
 8. **Show toast notifications for feedback**
 9. **Handle edge cases (email verification, etc.)**
-10. **Call router.refresh() after auth changes**
+10. **Call router.refresh() after auth changes**n u
